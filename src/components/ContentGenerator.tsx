@@ -40,7 +40,7 @@ export default function ContentGenerator() {
           ...ct,
           fields: [
             ...ct.fields,
-            { id: 'definition', name: 'Definition', type: 'text', selected: true }
+            { id: 'definition', name: 'Definition', type: 'text' as const, selected: true }
           ]
         };
       }

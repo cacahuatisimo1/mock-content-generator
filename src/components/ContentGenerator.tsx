@@ -7,13 +7,15 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, RotateCw, Settings } from 'lucide-react';
+import { Wand2, RotateCw, Settings, Globe, Database as DatabaseIcon } from 'lucide-react';
 import { getContentTypes, generateContentItems } from '../utils/mockDataGenerator';
+import { DictionaryService } from '../services/DictionaryService';
 import ContentTypeSelector from './ContentTypeSelector';
 import LanguageSelector from './LanguageSelector';
 import OutputFormatSelector from './OutputFormatSelector';
 import ResultDisplay from './ResultDisplay';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 
 export default function ContentGenerator() {
   const [contentTypes, setContentTypes] = useState<ContentType[]>(getContentTypes());
@@ -24,13 +26,29 @@ export default function ContentGenerator() {
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState('content');
+  const [useRealData, setUseRealData] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     // Select the first content type by default
     const initialContentTypes = getContentTypes();
-    setContentTypes(initialContentTypes);
-    setSelectedContentType(initialContentTypes[0]);
+    
+    // Add a new "definition" field to vocabulary content type
+    const updatedContentTypes = initialContentTypes.map(ct => {
+      if (ct.id === 'vocabulary') {
+        return {
+          ...ct,
+          fields: [
+            ...ct.fields,
+            { id: 'definition', name: 'Definition', type: 'text', selected: true }
+          ]
+        };
+      }
+      return ct;
+    });
+    
+    setContentTypes(updatedContentTypes);
+    setSelectedContentType(updatedContentTypes[0]);
   }, []);
 
   // Update the selected content type when contentTypes changes
@@ -69,36 +87,47 @@ export default function ContentGenerator() {
     setOutputFormat(format);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
     
-    // Simulate API call or processing delay
-    setTimeout(() => {
-      try {
-        const items = generateContentItems(selectedContentType, count, language);
-        setGeneratedItems(items);
+    try {
+      let items: GeneratedItem[];
+      
+      if (useRealData) {
+        // Use the real API data
+        items = await DictionaryService.generateRealContentItems(selectedContentType, count, language);
         
         toast({
-          title: "Content generated",
+          title: "Real content generated",
+          description: `Generated ${items.length} ${language === 'en' ? 'English' : 'Spanish'} items using dictionary API.`,
+        });
+      } else {
+        // Use mock data
+        items = generateContentItems(selectedContentType, count, language);
+        
+        toast({
+          title: "Mock content generated",
           description: `Generated ${items.length} ${language === 'en' ? 'English' : 'Spanish'} items.`,
         });
-      } catch (error) {
-        console.error("Error generating content:", error);
-        toast({
-          title: "Generation failed",
-          description: "An error occurred while generating content.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsGenerating(false);
       }
-    }, 800);
+      
+      setGeneratedItems(items);
+    } catch (error) {
+      console.error("Error generating content:", error);
+      toast({
+        title: "Generation failed",
+        description: "An error occurred while generating content.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const contentTypeText = language === 'en' 
     ? {
         title: "Content Generator",
-        description: "Generate mock language content for learning exercises",
+        description: "Generate language content for learning exercises",
         contentTypesTab: "Content Types",
         fieldsTab: "Fields",
         settingsTab: "Settings",
@@ -107,7 +136,11 @@ export default function ContentGenerator() {
         generateButton: "Generate Content",
         regenerateButton: "Regenerate",
         countLabel: "Number of items to generate:",
-        noFieldsSelected: "Please select at least one field to generate content."
+        noFieldsSelected: "Please select at least one field to generate content.",
+        useRealDataLabel: "Use real dictionary data:",
+        dataSourceLabel: "Data Source:",
+        mockData: "Mock Data",
+        realData: "Dictionary API"
       }
     : {
         title: "Generador de Contenido",
@@ -120,7 +153,11 @@ export default function ContentGenerator() {
         generateButton: "Generar Contenido",
         regenerateButton: "Regenerar",
         countLabel: "Número de elementos a generar:",
-        noFieldsSelected: "Por favor, selecciona al menos un campo para generar contenido."
+        noFieldsSelected: "Por favor, selecciona al menos un campo para generar contenido.",
+        useRealDataLabel: "Usar datos reales del diccionario:",
+        dataSourceLabel: "Fuente de datos:",
+        mockData: "Datos Simulados",
+        realData: "API de Diccionario"
       };
 
   return (
@@ -207,12 +244,46 @@ export default function ContentGenerator() {
                       <Slider
                         id="count"
                         min={1}
-                        max={100}
+                        max={50}
                         step={1}
                         value={[count]}
                         onValueChange={handleCountChange}
                         className="mt-2"
                       />
+                    </div>
+                    
+                    <div className="flex flex-col space-y-4">
+                      <Label>{contentTypeText.dataSourceLabel}</Label>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="data-source"
+                            checked={useRealData}
+                            onCheckedChange={setUseRealData}
+                          />
+                          <Label htmlFor="data-source" className="cursor-pointer">
+                            {useRealData ? (
+                              <span className="flex items-center gap-1.5">
+                                <Globe className="h-4 w-4 text-blue-500" />
+                                {contentTypeText.realData}
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1.5">
+                                <DatabaseIcon className="h-4 w-4 text-gray-500" />
+                                {contentTypeText.mockData}
+                              </span>
+                            )}
+                          </Label>
+                        </div>
+                      </div>
+                      
+                      {useRealData && (
+                        <div className="text-xs text-muted-foreground">
+                          {language === 'en' 
+                            ? "Using Free Dictionary API for real-world language data."
+                            : "Usando API de Diccionario Gratis para datos reales de lenguaje."}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>

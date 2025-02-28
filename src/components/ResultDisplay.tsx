@@ -4,7 +4,7 @@ import { GeneratedItem, OutputFormat } from '../types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DownloadCloud, Copy, Check, FileJson, FileCsv, FileSpreadsheet, Database } from 'lucide-react';
+import { DownloadCloud, Copy, Check, FileJson, FileText, FileSpreadsheet, Database } from 'lucide-react';
 import { formatAsJson, formatAsCsv, formatAsPostgres, formatAsMysql, formatAsMongodb, downloadContent } from '../utils/exportUtils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -81,7 +81,7 @@ export default function ResultDisplay({ items, format, language }: ResultDisplay
       case 'json':
         return <FileJson className="h-4 w-4" />;
       case 'csv':
-        return <FileCsv className="h-4 w-4" />;
+        return <FileText className="h-4 w-4" />;
       case 'excel':
         return <FileSpreadsheet className="h-4 w-4" />;
       case 'postgres':

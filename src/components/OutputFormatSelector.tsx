@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { OutputFormat } from '../types';
 import { Button } from '@/components/ui/button';
-import { FileJson, FileCsv, FileSpreadsheet, Database } from 'lucide-react';
+import { FileJson, FileText, FileSpreadsheet, Database } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +31,7 @@ export default function OutputFormatSelector({ format, onChange }: OutputFormatS
       case 'json':
         return <FileJson className="h-4 w-4" />;
       case 'csv':
-        return <FileCsv className="h-4 w-4" />;
+        return <FileText className="h-4 w-4" />;
       case 'excel':
         return <FileSpreadsheet className="h-4 w-4" />;
       case 'postgres':
@@ -88,7 +88,7 @@ export default function OutputFormatSelector({ format, onChange }: OutputFormatS
             className="cursor-pointer flex items-center gap-2"
             onClick={() => handleSelect('csv')}
           >
-            <FileCsv className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             <span>CSV</span>
           </DropdownMenuItem>
           <DropdownMenuItem 

@@ -7,15 +7,14 @@ import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Wand2, RotateCw, Settings, Globe, Database as DatabaseIcon } from 'lucide-react';
-import { getContentTypes, generateContentItems } from '../utils/mockDataGenerator';
+import { Wand2, RotateCw, Settings, Globe } from 'lucide-react';
+import { getContentTypes } from '../utils/mockDataGenerator';
 import { DictionaryService } from '../services/DictionaryService';
 import ContentTypeSelector from './ContentTypeSelector';
 import LanguageSelector from './LanguageSelector';
 import OutputFormatSelector from './OutputFormatSelector';
 import ResultDisplay from './ResultDisplay';
 import { useToast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
 
 export default function ContentGenerator() {
   const [contentTypes, setContentTypes] = useState<ContentType[]>(getContentTypes());
@@ -26,7 +25,6 @@ export default function ContentGenerator() {
   const [generatedItems, setGeneratedItems] = useState<GeneratedItem[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState('content');
-  const [useRealData, setUseRealData] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,32 +89,24 @@ export default function ContentGenerator() {
     setIsGenerating(true);
     
     try {
-      let items: GeneratedItem[];
+      // Usar siempre la API del diccionario
+      const items = await DictionaryService.generateContentItems(selectedContentType, count, language);
       
-      if (useRealData) {
-        // Use the real API data
-        items = await DictionaryService.generateRealContentItems(selectedContentType, count, language);
-        
-        toast({
-          title: "Real content generated",
-          description: `Generated ${items.length} ${language === 'en' ? 'English' : 'Spanish'} items using dictionary API.`,
-        });
-      } else {
-        // Use mock data
-        items = generateContentItems(selectedContentType, count, language);
-        
-        toast({
-          title: "Mock content generated",
-          description: `Generated ${items.length} ${language === 'en' ? 'English' : 'Spanish'} items.`,
-        });
-      }
+      toast({
+        title: language === 'en' ? "Content generated" : "Contenido generado",
+        description: language === 'en' 
+          ? `Generated ${items.length} items using dictionary API.` 
+          : `Generados ${items.length} elementos usando la API de diccionario.`,
+      });
       
       setGeneratedItems(items);
     } catch (error) {
       console.error("Error generating content:", error);
       toast({
-        title: "Generation failed",
-        description: "An error occurred while generating content.",
+        title: language === 'en' ? "Generation failed" : "Falló la generación",
+        description: language === 'en' 
+          ? "An error occurred while generating content." 
+          : "Se produjo un error al generar el contenido.",
         variant: "destructive"
       });
     } finally {
@@ -137,9 +127,7 @@ export default function ContentGenerator() {
         regenerateButton: "Regenerate",
         countLabel: "Number of items to generate:",
         noFieldsSelected: "Please select at least one field to generate content.",
-        useRealDataLabel: "Use real dictionary data:",
         dataSourceLabel: "Data Source:",
-        mockData: "Mock Data",
         realData: "Dictionary API"
       }
     : {
@@ -154,9 +142,7 @@ export default function ContentGenerator() {
         regenerateButton: "Regenerar",
         countLabel: "Número de elementos a generar:",
         noFieldsSelected: "Por favor, selecciona al menos un campo para generar contenido.",
-        useRealDataLabel: "Usar datos reales del diccionario:",
         dataSourceLabel: "Fuente de datos:",
-        mockData: "Datos Simulados",
         realData: "API de Diccionario"
       };
 
@@ -256,34 +242,18 @@ export default function ContentGenerator() {
                       <Label>{contentTypeText.dataSourceLabel}</Label>
                       <div className="flex items-center space-x-4">
                         <div className="flex items-center gap-2">
-                          <Switch
-                            id="data-source"
-                            checked={useRealData}
-                            onCheckedChange={setUseRealData}
-                          />
-                          <Label htmlFor="data-source" className="cursor-pointer">
-                            {useRealData ? (
-                              <span className="flex items-center gap-1.5">
-                                <Globe className="h-4 w-4 text-blue-500" />
-                                {contentTypeText.realData}
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1.5">
-                                <DatabaseIcon className="h-4 w-4 text-gray-500" />
-                                {contentTypeText.mockData}
-                              </span>
-                            )}
-                          </Label>
+                          <span className="flex items-center gap-1.5">
+                            <Globe className="h-4 w-4 text-blue-500" />
+                            {contentTypeText.realData}
+                          </span>
                         </div>
                       </div>
                       
-                      {useRealData && (
-                        <div className="text-xs text-muted-foreground">
-                          {language === 'en' 
-                            ? "Using Free Dictionary API for real-world language data."
-                            : "Usando API de Diccionario Gratis para datos reales de lenguaje."}
-                        </div>
-                      )}
+                      <div className="text-xs text-muted-foreground">
+                        {language === 'en' 
+                          ? "Using Free Dictionary API for real-world language data."
+                          : "Usando API de Diccionario Gratis para datos reales de lenguaje."}
+                      </div>
                     </div>
                   </div>
                 </CardContent>

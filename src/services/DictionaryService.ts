@@ -60,8 +60,8 @@ export class DictionaryService {
         ];
   }
 
-  // Generate real content items using dictionary API data
-  static async generateRealContentItems(
+  // Generate content items using dictionary API data
+  static async generateContentItems(
     contentType: ContentType,
     count: number,
     language: Language
@@ -126,15 +126,21 @@ export class DictionaryService {
           case 'verb':
             if (wordData.meanings.some(m => m.partOfSpeech === 'verb')) {
               item[field.name] = word;
-              // For simplicity, we're using placeholders for verb forms
+              // Para verbos, intentamos ser más precisos con las conjugaciones
+              if (language === 'en') {
+                item['pastTense'] = this.getEnglishPastTense(word);
+                item['participle'] = this.getEnglishParticiple(word);
+                item['gerund'] = this.getEnglishGerund(word);
+              } else {
+                item['pastTense'] = this.getSpanishPastTense(word);
+                item['participle'] = this.getSpanishParticiple(word);
+                item['gerund'] = this.getSpanishGerund(word);
+              }
+            } else {
+              item[field.name] = word;
               item['pastTense'] = language === 'en' ? `${word}ed` : `${word}ó`;
               item['participle'] = language === 'en' ? `${word}ed` : `${word}ado`;
               item['gerund'] = language === 'en' ? `${word}ing` : `${word}ando`;
-            } else {
-              item[field.name] = word;
-              item['pastTense'] = word;
-              item['participle'] = word;
-              item['gerund'] = word;
             }
             break;
             
@@ -207,5 +213,45 @@ export class DictionaryService {
           return `Este es un ejemplo de ${word}.`;
       }
     }
+  }
+
+  // Funciones auxiliares para conjugación de verbos
+  private static getEnglishPastTense(verb: string): string {
+    // Reglas básicas de conjugación en inglés
+    if (verb.endsWith('e')) return `${verb}d`;
+    if (verb.endsWith('y')) return `${verb.slice(0, -1)}ied`;
+    return `${verb}ed`;
+  }
+
+  private static getEnglishParticiple(verb: string): string {
+    // Similar al pasado en muchos casos
+    return this.getEnglishPastTense(verb);
+  }
+
+  private static getEnglishGerund(verb: string): string {
+    // Reglas básicas para el gerundio en inglés
+    if (verb.endsWith('e')) return `${verb.slice(0, -1)}ing`;
+    return `${verb}ing`;
+  }
+
+  private static getSpanishPastTense(verb: string): string {
+    // Reglas básicas para el pretérito en español
+    if (verb.endsWith('ar')) return `${verb.slice(0, -2)}ó`;
+    if (verb.endsWith('er') || verb.endsWith('ir')) return `${verb.slice(0, -2)}ió`;
+    return `${verb}ó`;
+  }
+
+  private static getSpanishParticiple(verb: string): string {
+    // Reglas básicas para el participio en español
+    if (verb.endsWith('ar')) return `${verb.slice(0, -2)}ado`;
+    if (verb.endsWith('er') || verb.endsWith('ir')) return `${verb.slice(0, -2)}ido`;
+    return `${verb}ado`;
+  }
+
+  private static getSpanishGerund(verb: string): string {
+    // Reglas básicas para el gerundio en español
+    if (verb.endsWith('ar')) return `${verb.slice(0, -2)}ando`;
+    if (verb.endsWith('er') || verb.endsWith('ir')) return `${verb.slice(0, -2)}iendo`;
+    return `${verb}ando`;
   }
 }

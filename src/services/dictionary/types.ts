@@ -17,4 +17,6 @@ export interface DictionaryEntry {
       antonyms: string[];
     }[];
   }[];
+  // Added support for example sentences from Tatoeba
+  examples?: string[];
 }

@@ -65,19 +65,31 @@ export class DictionaryService {
             break;
             
           case 'completeSentence':
+            // Use the real example from dictionary API or get one from Tatoeba
             const meaning = wordData.meanings[0]?.definitions[0];
             if (meaning?.example) {
               item[field.name] = meaning.example;
             } else {
-              item[field.name] = SentenceGenerator.generateSentence(wordData, language);
+              item[field.name] = await SentenceGenerator.generateSentence(wordData, language);
             }
             break;
             
           case 'gapFillSentence':
-            const sentence = SentenceGenerator.generateSentence(wordData, language);
-            const gapSentence = sentence.replace(word, '___');
-            item[field.name] = gapSentence;
-            item['answer'] = word;
+            // Get a sentence from Tatoeba or generate one, then create a gap
+            const sentence = await SentenceGenerator.generateSentence(wordData, language);
+            const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
+            const gapSentence = sentence.replace(wordRegex, '___');
+            
+            // Only use if the word is actually replaced (it should be in the sentence)
+            if (gapSentence !== sentence) {
+              item[field.name] = gapSentence;
+              item['answer'] = word;
+            } else {
+              // Fallback if word not found in sentence
+              const simpleSentence = SentenceGenerator.generateSimpleSentence(wordData, language);
+              item[field.name] = simpleSentence.replace(word, '___');
+              item['answer'] = word;
+            }
             break;
             
           case 'verb':
